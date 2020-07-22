@@ -7,7 +7,7 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
+	logger "log"
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -28,6 +28,8 @@ var trollGroups = []string{
 }
 
 const logfile = "troll-shield.log"
+
+var log = logger.New(os.Stderr, "", logger.LstdFlags)
 
 // findTrollHouse return the troll house group name if is well-known
 // otherwise, returns a empty string
@@ -66,6 +68,11 @@ func setupLogging() {
 	wrt := io.MultiWriter(os.Stdout, f)
 
 	log.SetOutput(wrt)
+	// register log to BotLoggt
+	err = tgbotapi.SetLogger(log)
+	if err != nil {
+		log.Printf("Set Telegram Bot Logging error: %v", err)
+	}
 }
 
 func main() {
