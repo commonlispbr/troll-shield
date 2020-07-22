@@ -39,7 +39,7 @@ func findTrollHouse(bot *tgbotapi.BotAPI, userID int) (string, error) {
 			error = err
 			continue
 		}
-		if chatMember.IsMember() {
+		if chatMember.IsMember() || chatMember.IsCreator() || chatMember.IsAdministrator() {
 			return trollGroup, nil
 		}
 	}
