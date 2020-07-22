@@ -15,6 +15,7 @@ import (
 // blacklist groups, member from that groups will be kicked automatically
 var trollGroups = []string{
 	"@ccppbrasil",
+	"@vaicaraiooo",
 	"@progclucb",
 	"@progclucb",
 	"@commonlispbrofficial",
