@@ -17,7 +17,7 @@ var trollGroups = []string{
 	"@ccppbrasil",
 	"@vaicaraiooo",
 	"@progclucb",
-	"@progclucb",
+	"@progclube",
 	"@commonlispbrofficial",
 }
 
