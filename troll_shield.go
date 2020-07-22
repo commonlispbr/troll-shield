@@ -12,7 +12,13 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-var trollGroups = []string{"@ccppbrasil", "@progclucb", "@progclucb"}
+// blacklist groups, member from that groups will be kicked automatically
+var trollGroups = []string{
+	"@ccppbrasil",
+	"@progclucb",
+	"@progclucb",
+	"@commonlispbrofficial",
+}
 
 // findTrollHouse return the troll house group name if is well-known
 // otherwise, returns a empty string
@@ -86,7 +92,7 @@ func main() {
 
 				if resp.Ok == false || err != nil {
 					log.Printf(
-						"Kicking %v did not work, error code %v: %v",
+						"Kicking %q did not work, error code %v: %v",
 						member.FirstName, resp.ErrorCode, resp.Description,
 					)
 				} else {
