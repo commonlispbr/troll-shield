@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -20,6 +21,8 @@ var trollGroups = []string{
 	"@progclube",
 	"@commonlispbrofficial",
 }
+
+const logfile = "troll-shield.log"
 
 // findTrollHouse return the troll house group name if is well-known
 // otherwise, returns a empty string
@@ -49,7 +52,19 @@ func selectedEvent(update *tgbotapi.Update) bool {
 	return update.Message != nil && update.Message.NewChatMembers != nil
 }
 
+func setupLogging() {
+	// log to console and file
+	f, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	wrt := io.MultiWriter(os.Stdout, f)
+
+	log.SetOutput(wrt)
+}
+
 func main() {
+	setupLogging()
 	token, exists := os.LookupEnv("TELEGRAM_BOT_TOKEN")
 	if !exists {
 		log.Fatal("TELEGRAM_BOT_TOKEN env should be defined.")
