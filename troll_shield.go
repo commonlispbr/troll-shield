@@ -129,7 +129,10 @@ func main() {
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
 					msg.ReplyToMessageID = update.Message.MessageID
 
-					bot.Send(msg)
+					_, err := bot.Send(msg)
+					if err != nil {
+						log.Printf("Send msg failed: %v", err)
+					}
 				}
 			}
 		}
