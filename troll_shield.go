@@ -17,6 +17,7 @@ import (
 var trollGroups = []string{
 	"@ccppbrasil",
 	"@vaicaraiooo",
+	"@javascriptbr",
 	"@progclucb",
 	"@progclube",
 	"@commonlispbrofficial",
