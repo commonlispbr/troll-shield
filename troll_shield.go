@@ -9,6 +9,8 @@ import (
 	"io"
 	logger "log"
 	"os"
+	"strings"
+	"sync"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -31,23 +33,37 @@ var log = logger.New(os.Stderr, "", logger.LstdFlags)
 
 // findTrollHouse return the troll house group name if is well-known
 // otherwise, returns a empty string
-func findTrollHouse(bot *tgbotapi.BotAPI, userID int) (string, error) {
-	var error error
+func findTrollHouses(bot *tgbotapi.BotAPI, userID int) string {
+	ch := make(chan string, len(trollGroups))
+	var wait sync.WaitGroup
 	for _, trollGroup := range trollGroups {
-		c, err := bot.GetChatMember(tgbotapi.ChatConfigWithUser{
-			SuperGroupUsername: trollGroup,
-			UserID:             userID,
-		})
-		if err != nil {
-			error = err
-			continue
-		}
-		if c.IsMember() || c.IsCreator() || c.IsAdministrator() {
-			return trollGroup, nil
+		wait.Add(1)
+		go func(group string) {
+			defer wait.Done()
+			c, _ := bot.GetChatMember(tgbotapi.ChatConfigWithUser{
+				SuperGroupUsername: group,
+				UserID:             userID,
+			})
+			if c.IsMember() || c.IsCreator() || c.IsAdministrator() {
+				ch <- group
+			} else {
+				ch <- ""
+			}
+		}(trollGroup)
+
+	}
+	go func() {
+		wait.Wait()
+		close(ch)
+	}()
+	var houses []string
+	for house := range ch {
+		if house != "" {
+			houses = append(houses, house)
 		}
 	}
 
-	return "", error
+	return strings.Join(houses, ", ")
 }
 
 // messageEvent: return true if is a message event
@@ -132,12 +148,7 @@ func main() {
 
 		if newChatMemberEvent(&update) {
 			for _, member := range *update.Message.NewChatMembers {
-				trollHouse, err := findTrollHouse(bot, member.ID)
-				if err != nil {
-					log.Printf("[!] findTrollHouse returned a error: %v", err)
-				}
-
-				if trollHouse != "" {
+				if trollHouse := findTrollHouses(bot, member.ID); trollHouse != "" {
 					chatMember := tgbotapi.ChatMemberConfig{
 						ChatID: update.Message.Chat.ID,
 						UserID: member.ID,
