@@ -34,18 +34,17 @@ var log = logger.New(os.Stderr, "", logger.LstdFlags)
 // findTrollHouse return the troll house group name if is well-known
 // otherwise, returns a empty string
 func findTrollHouse(bot *tgbotapi.BotAPI, userID int) (string, error) {
-	var error error = nil
+	var error error
 	for _, trollGroup := range trollGroups {
-		chatMemberConf := tgbotapi.ChatConfigWithUser{
+		c, err := bot.GetChatMember(tgbotapi.ChatConfigWithUser{
 			SuperGroupUsername: trollGroup,
 			UserID:             userID,
-		}
-		chatMember, err := bot.GetChatMember(chatMemberConf)
+		})
 		if err != nil {
 			error = err
 			continue
 		}
-		if chatMember.IsMember() || chatMember.IsCreator() || chatMember.IsAdministrator() {
+		if c.IsMember() || c.IsCreator() || c.IsAdministrator() {
 			return trollGroup, nil
 		}
 	}
