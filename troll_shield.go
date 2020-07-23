@@ -72,6 +72,26 @@ func setupLogging() {
 	}
 }
 
+func getUserName(user tgbotapi.User) string {
+	username := user.FirstName
+	if user.UserName != "" {
+		username = fmt.Sprintf("@%v", user.UserName)
+	} else if user.LastName != "" {
+		username = fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+	}
+	return username
+}
+
+func reply(bot *tgbotapi.BotAPI, update *tgbotapi.Update, text string) {
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+	msg.ReplyToMessageID = update.Message.MessageID
+
+	_, err := bot.Send(msg)
+	if err != nil {
+		log.Printf("[!] Send msg failed: %v", err)
+	}
+}
+
 func main() {
 	setupLogging()
 	token, exists := os.LookupEnv("TELEGRAM_BOT_TOKEN")
