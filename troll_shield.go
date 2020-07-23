@@ -50,10 +50,20 @@ func findTrollHouse(bot *tgbotapi.BotAPI, userID int) (string, error) {
 	return "", error
 }
 
-// TODO: should only works on @commonlispbr on future
-// selectedEvent return true if is a desired event to be processed
-func selectedEvent(update *tgbotapi.Update) bool {
-	return update.Message != nil && update.Message.NewChatMembers != nil
+// messageEvent: return true if is a message event
+func messageEvent(update *tgbotapi.Update) bool {
+	return update.Message != nil
+}
+
+// newChatMemberEvent: return true if a new member joined to chat
+func newChatMemberEvent(update *tgbotapi.Update) bool {
+	return messageEvent(update) && update.Message.NewChatMembers != nil
+}
+
+// fromChatEvent: return true if the message is from a specific chat
+func fromChatEvent(update *tgbotapi.Update, username string) bool {
+	chat := update.Message.Chat
+	return messageEvent(update) && chat != nil && (chat.UserName == username || chat.Title == username)
 }
 
 func setupLogging() {
@@ -106,7 +116,7 @@ func main() {
 
 	bot.Debug = true
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Printf("Authorized on account @%s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -114,48 +124,50 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		// Check if is join event
-		if !selectedEvent(&update) { // ignore any non-Message Updates
-			continue
+		if messageEvent(&update) {
+			if update.Message.Text == "/lelerax" {
+				reply(bot, &update, "Estou vivo.")
+			}
 		}
 
-		for _, member := range *update.Message.NewChatMembers {
-			trollHouse, err := findTrollHouse(bot, member.ID)
-			if err != nil {
-				log.Printf("findTrollHouse betrayed us: %v", err)
-				continue
-			}
-
-			if trollHouse != "" {
-				chatMember := tgbotapi.ChatMemberConfig{
-					ChatID: update.Message.Chat.ID,
-					UserID: member.ID,
+		if newChatMemberEvent(&update) {
+			for _, member := range *update.Message.NewChatMembers {
+				trollHouse, err := findTrollHouse(bot, member.ID)
+				if err != nil {
+					log.Printf("[!] findTrollHouse returned a error: %v", err)
 				}
-				resp, err := bot.KickChatMember(
-					tgbotapi.KickChatMemberConfig{ChatMemberConfig: chatMember},
-				)
 
-				if resp.Ok == false || err != nil {
-					log.Printf(
-						"Kicking %q did not work, error code %v: %v",
-						member.FirstName, resp.ErrorCode, resp.Description,
-					)
-				} else {
-					username := member.FirstName
-					if member.UserName != "" {
-						username = fmt.Sprintf("@%v", member.UserName)
+				if trollHouse != "" {
+					chatMember := tgbotapi.ChatMemberConfig{
+						ChatID: update.Message.Chat.ID,
+						UserID: member.ID,
 					}
-					text := fmt.Sprintf(
-						"%v foi banido porque é membro do grupo: %v. Adeus.",
-						username, trollHouse,
+					resp, err := bot.KickChatMember(
+						tgbotapi.KickChatMemberConfig{ChatMemberConfig: chatMember},
 					)
 
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
-					msg.ReplyToMessageID = update.Message.MessageID
-
-					_, err := bot.Send(msg)
-					if err != nil {
-						log.Printf("Send msg failed: %v", err)
+					if resp.Ok == false || err != nil {
+						log.Printf(
+							"[!] Kicking %q did not work, error code %v: %v",
+							member.FirstName, resp.ErrorCode, resp.Description,
+						)
+					} else {
+						username := getUserName(member)
+						text := fmt.Sprintf(
+							"%v foi banido porque é membro do grupo: %v. Adeus.",
+							username, trollHouse,
+						)
+						reply(bot, &update, text)
+					}
+				} else {
+					if fromChatEvent(&update, "commonlispbr") && !member.IsBot {
+						username := getUserName(member)
+						text := fmt.Sprintf(
+							`Olá %s! Seja bem-vindo ao grupo oficial de Common Lisp do Brasil.
+Leia as regras em: https://lisp.com.br/rules.html.`,
+							username,
+						)
+						reply(bot, &update, text)
 					}
 				}
 			}
