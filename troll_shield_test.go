@@ -1,10 +1,36 @@
 package main
 
 import (
+	"errors"
 	"testing"
 
 	telegram "github.com/go-telegram-bot-api/telegram-bot-api"
 )
+
+type BotMockup struct{}
+
+func (bot *BotMockup) GetChatMember(c telegram.ChatConfigWithUser) (telegram.ChatMember, error) {
+	switch c.UserID {
+	case 1:
+		return telegram.ChatMember{Status: "member"}, nil
+	case 2:
+		return telegram.ChatMember{Status: "creator"}, nil
+	case 3:
+		return telegram.ChatMember{Status: "administrator"}, nil
+	case 4:
+		return telegram.ChatMember{Status: "left"}, nil
+	default:
+		return telegram.ChatMember{}, errors.New("user not found")
+	}
+}
+
+func (bot *BotMockup) KickChatMember(c telegram.KickChatMemberConfig) (telegram.APIResponse, error) {
+	return telegram.APIResponse{Ok: true}, nil
+}
+
+func (bot *BotMockup) Send(c telegram.Chattable) (telegram.Message, error) {
+	return telegram.Message{}, nil
+}
 
 func TestGetUserName(t *testing.T) {
 	user1 := telegram.User{
