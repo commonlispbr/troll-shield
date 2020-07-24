@@ -114,3 +114,14 @@ func TestFindTrollHouses(t *testing.T) {
 	}
 }
 
+func TestKickTroll(t *testing.T) {
+	botnilson := BotMockup{}
+	update := telegram.Update{}
+	message := telegram.Message{}
+	chat := telegram.Chat{}
+	message.Chat = &chat
+	update.Message = &message
+	user := telegram.User{}
+	kickTroll(&botnilson, &update, user, "@trollhouse")
+}
+
