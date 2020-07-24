@@ -89,7 +89,7 @@ func reply(bot TrollShieldBot, update *telegram.Update, text string) {
 	}
 }
 
-func welcomeMessage(bot *telegram.BotAPI, update *telegram.Update, member telegram.User) {
+func welcomeMessage(bot TrollShieldBot, update *telegram.Update, member telegram.User) {
 	username := getUserName(member)
 	text := fmt.Sprintf(
 		`Olá %s! Seja bem-vindo ao grupo oficial de Common Lisp do Brasil.
@@ -136,7 +136,7 @@ func findTrollHouses(bot TrollShieldBot, userID int) string {
 }
 
 // kickTroll ban the troll and send a message about where we can found the trolls
-func kickTroll(bot *telegram.BotAPI, update *telegram.Update, user telegram.User, trollHouse string) {
+func kickTroll(bot TrollShieldBot, update *telegram.Update, user telegram.User, trollHouse string) {
 	chatMember := telegram.ChatMemberConfig{
 		ChatID: update.Message.Chat.ID,
 		UserID: user.ID,
