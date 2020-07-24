@@ -93,3 +93,24 @@ func TestEvents(t *testing.T) {
 	}
 
 }
+
+func TestFindTrollHouses(t *testing.T) {
+	botnilson := BotMockup{}
+	trollGroups = []string{"@rolisvaldo"}
+	if got := findTrollHouses(&botnilson, 1); got != "@rolisvaldo" {
+		t.Errorf("findTrollHouses expects @rolisvaldo, got: %v", got)
+	}
+	if got := findTrollHouses(&botnilson, 2); got != "@rolisvaldo" {
+		t.Errorf("findTrollHouses expects @rolisvaldo, got: %v", got)
+	}
+	if got := findTrollHouses(&botnilson, 3); got != "@rolisvaldo" {
+		t.Errorf("findTrollHouses expects @rolisvaldo, got: %v", got)
+	}
+	if got := findTrollHouses(&botnilson, 4); got != "" {
+		t.Errorf("findTrollHouses expects empty string, got: %v", got)
+	}
+	if got := findTrollHouses(&botnilson, -1); got != "" {
+		t.Errorf("findTrollHouses expects empty string, got: %v", got)
+	}
+}
+
