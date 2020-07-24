@@ -31,8 +31,9 @@ const logfile = "troll-shield.log"
 
 var log = logger.New(os.Stderr, "", logger.LstdFlags)
 
-// findTrollHouse return the troll house group name if is well-known
-// otherwise, returns a empty string
+// findTrollHouses return a string with groups separeted by comma,
+// that groups are well-known to being troll houses.
+// otherwise, if nothing is found returns a empty string
 func findTrollHouses(bot *tgbotapi.BotAPI, userID int) string {
 	ch := make(chan string, len(trollGroups))
 	var wait sync.WaitGroup
@@ -98,6 +99,10 @@ func setupLogging() {
 	}
 }
 
+// getUserName: return the most meaningful name available from a telegram user
+// if it has a @username, return it
+// if not, try to return FirstName + LastName
+// otherwise, only return the FirstName
 func getUserName(user tgbotapi.User) string {
 	username := user.FirstName
 	if user.UserName != "" {
