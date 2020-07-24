@@ -145,7 +145,7 @@ func kickTroll(bot TrollShieldBot, update *telegram.Update, user telegram.User, 
 		telegram.KickChatMemberConfig{ChatMemberConfig: chatMember},
 	)
 
-	if resp.Ok == false || err != nil {
+	if !resp.Ok || err != nil {
 		log.Printf(
 			"[!] Kicking %q did not work, error code %v: %v",
 			user.FirstName, resp.ErrorCode, resp.Description,

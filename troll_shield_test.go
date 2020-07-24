@@ -125,7 +125,7 @@ func TestKickTroll(t *testing.T) {
 	kickTroll(&botnilson, &update, user, "@trollhouse")
 }
 
-func testWelcomeMessage(t *testing.T) {
+func TestWelcomeMessage(t *testing.T) {
 	botnilson := BotMockup{}
 	update := telegram.Update{}
 	message := telegram.Message{}
