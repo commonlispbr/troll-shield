@@ -213,6 +213,15 @@ func setupBots() (*telegram.BotAPI, *telegram.BotAPI) {
 
 	return bot, botHidden
 }
+
+func leaveChat(bot *telegram.BotAPI, update *telegram.Update, trollGroup string) {
+	reply(bot, update, "Nesse grupo há trolls. Dou-me a liberdade de ir embora. Adeus.")
+	r, err := bot.LeaveChat(telegram.ChatConfig{ChatID: update.Message.Chat.ID})
+	if !r.Ok || err != nil {
+		log.Printf("%v tried to exit from %v, but failed with: %v",
+			bot.Self.UserName, trollGroup, err,
+		)
+	}
 }
 
 func main() {
@@ -224,6 +233,13 @@ func main() {
 			if update.Message.Text == "/lelerax" {
 				reply(bot, &update, "Estou vivo.")
 			}
+
+			// Exit automatically from group after the bot receive a message from it
+			for _, trollGroup := range trollGroups {
+				if fromChatEvent(&update, strings.TrimLeft(trollGroup, "@")) {
+					leaveChat(bot, &update, trollGroup)
+				}
+			}
 		}
 
 		if newChatMemberEvent(&update) {
@@ -233,6 +249,14 @@ func main() {
 				} else if fromChatEvent(&update, "commonlispbr") && !member.IsBot {
 					welcomeMessage(bot, &update, member)
 				}
+
+				// Exit automatically from groups when I'm joining it
+				for _, trollGroup := range trollGroups {
+					if fromChatEvent(&update, strings.TrimLeft(trollGroup, "@")) && member.UserName == bot.Self.UserName {
+						leaveChat(bot, &update, trollGroup)
+					}
+				}
+
 			}
 		}
 	}
