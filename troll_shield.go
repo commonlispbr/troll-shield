@@ -176,27 +176,49 @@ func setupLogging() {
 	}
 }
 
-func setupBot() *telegram.BotAPI {
-	token, exists := os.LookupEnv("TELEGRAM_BOT_TOKEN")
+func setupBot(envVar string) (*telegram.BotAPI, error) {
+	token, exists := os.LookupEnv(envVar)
 	if !exists {
-		log.Fatal("TELEGRAM_BOT_TOKEN env should be defined.")
+		return nil, fmt.Errorf("%s env should be defined", envVar)
 	}
 	bot, err := telegram.NewBotAPI(token)
 
 	if err != nil {
-		log.Panic(err)
+		return nil, fmt.Errorf("Setup %v failed with: %v", envVar, err)
 	}
 
 	bot.Debug = true
 
 	log.Printf("Authorized on account @%s", bot.Self.UserName)
 
-	return bot
+	return bot, nil
+}
+
+func setupBots() (*telegram.BotAPI, *telegram.BotAPI) {
+	var bot, botHidden *telegram.BotAPI
+	var err error
+
+	log.Println("Setup the main bot")
+	bot, err = setupBot("TELEGRAM_BOT_TOKEN")
+	if err != nil {
+		log.Fatalf("Bot setup failed: %v", err)
+	}
+
+	log.Println("Setup the hidden bot")
+	botHidden, err = setupBot("TELEGRAM_BOT_HIDDEN_TOKEN")
+	if err != nil {
+		log.Printf("Bot setup failed: %v. Fallback to main bot.", err)
+		botHidden = bot
+	}
+
+	return bot, botHidden
+}
 }
 
 func main() {
 	setupLogging()
-	bot := setupBot()
+	bot, botHidden := setupBots()
+
 	for update := range getUpdates(bot) {
 		if messageEvent(&update) {
 			if update.Message.Text == "/lelerax" {
@@ -206,7 +228,7 @@ func main() {
 
 		if newChatMemberEvent(&update) {
 			for _, member := range *update.Message.NewChatMembers {
-				if trollHouse := findTrollHouses(bot, member.ID); trollHouse != "" {
+				if trollHouse := findTrollHouses(botHidden, member.ID); trollHouse != "" {
 					kickTroll(bot, &update, member, trollHouse)
 				} else if fromChatEvent(&update, "commonlispbr") && !member.IsBot {
 					welcomeMessage(bot, &update, member)
