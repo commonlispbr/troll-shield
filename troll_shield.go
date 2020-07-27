@@ -20,6 +20,8 @@ type TrollShieldBot interface {
 	GetChatMember(telegram.ChatConfigWithUser) (telegram.ChatMember, error)
 	KickChatMember(telegram.KickChatMemberConfig) (telegram.APIResponse, error)
 	Send(telegram.Chattable) (telegram.Message, error)
+	LeaveChat(telegram.ChatConfig) (telegram.APIResponse, error)
+	GetUpdatesChan(telegram.UpdateConfig) (telegram.UpdatesChannel, error)
 }
 
 // blacklist groups, member from that groups will be kicked automatically
@@ -68,7 +70,7 @@ func getUserName(user telegram.User) string {
 	return username
 }
 
-func getUpdates(bot *telegram.BotAPI) telegram.UpdatesChannel {
+func getUpdates(bot TrollShieldBot) telegram.UpdatesChannel {
 	u := telegram.NewUpdate(0)
 	u.Timeout = 60
 	updates, err := bot.GetUpdatesChan(u)
@@ -194,14 +196,14 @@ func setupBot(envVar string) (*telegram.BotAPI, error) {
 	return bot, nil
 }
 
-func setupBots() (*telegram.BotAPI, *telegram.BotAPI) {
+func setupBots() (*telegram.BotAPI, *telegram.BotAPI, error) {
 	var bot, botHidden *telegram.BotAPI
 	var err error
 
 	log.Println("Setup the main bot")
 	bot, err = setupBot("TELEGRAM_BOT_TOKEN")
 	if err != nil {
-		log.Fatalf("Bot setup failed: %v", err)
+		return nil, nil, err
 	}
 
 	log.Println("Setup the hidden bot")
@@ -211,22 +213,25 @@ func setupBots() (*telegram.BotAPI, *telegram.BotAPI) {
 		botHidden = bot
 	}
 
-	return bot, botHidden
+	return bot, botHidden, nil
 }
 
-func leaveChat(bot *telegram.BotAPI, update *telegram.Update, trollGroup string) {
+func leaveChat(bot TrollShieldBot, update *telegram.Update, trollGroup string) {
 	reply(bot, update, "Nesse grupo há trolls. Dou-me a liberdade de ir embora. Adeus.")
 	r, err := bot.LeaveChat(telegram.ChatConfig{ChatID: update.Message.Chat.ID})
 	if !r.Ok || err != nil {
-		log.Printf("%v tried to exit from %v, but failed with: %v",
-			bot.Self.UserName, trollGroup, err,
+		log.Printf("Bot tried to exit from %v, but failed with: %v",
+			trollGroup, err,
 		)
 	}
 }
 
 func main() {
 	setupLogging()
-	bot, botHidden := setupBots()
+	bot, botHidden, err := setupBots()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	for update := range getUpdates(bot) {
 		if messageEvent(&update) {
