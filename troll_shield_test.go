@@ -26,7 +26,13 @@ func (bot *BotMockup) GetChatMember(c telegram.ChatConfigWithUser) (telegram.Cha
 }
 
 func (bot *BotMockup) KickChatMember(c telegram.KickChatMemberConfig) (telegram.APIResponse, error) {
-	return telegram.APIResponse{Ok: true}, nil
+	switch c.ChatMemberConfig.UserID {
+	case 0:
+		return telegram.APIResponse{Ok: true}, nil
+	default:
+		return telegram.APIResponse{Ok: false}, errors.New("error")
+	}
+
 }
 
 func (bot *BotMockup) Send(c telegram.Chattable) (telegram.Message, error) {
@@ -136,6 +142,8 @@ func TestKickTroll(t *testing.T) {
 	message.Chat = &chat
 	update.Message = &message
 	user := telegram.User{}
+	kickTroll(&botnilson, &update, user, "@trollhouse")
+	user.ID = 1
 	kickTroll(&botnilson, &update, user, "@trollhouse")
 }
 
