@@ -20,6 +20,8 @@ type TrollShieldBot interface {
 	GetChatMember(telegram.ChatConfigWithUser) (telegram.ChatMember, error)
 	KickChatMember(telegram.KickChatMemberConfig) (telegram.APIResponse, error)
 	Send(telegram.Chattable) (telegram.Message, error)
+	LeaveChat(telegram.ChatConfig) (telegram.APIResponse, error)
+	GetUpdatesChan(telegram.UpdateConfig) (telegram.UpdatesChannel, error)
 }
 
 // blacklist groups, member from that groups will be kicked automatically
@@ -68,7 +70,7 @@ func getUserName(user telegram.User) string {
 	return username
 }
 
-func getUpdates(bot *telegram.BotAPI) telegram.UpdatesChannel {
+func getUpdates(bot TrollShieldBot) telegram.UpdatesChannel {
 	u := telegram.NewUpdate(0)
 	u.Timeout = 60
 	updates, err := bot.GetUpdatesChan(u)
@@ -176,41 +178,92 @@ func setupLogging() {
 	}
 }
 
-func setupBot() *telegram.BotAPI {
-	token, exists := os.LookupEnv("TELEGRAM_BOT_TOKEN")
+func setupBot(envVar string) (*telegram.BotAPI, error) {
+	token, exists := os.LookupEnv(envVar)
 	if !exists {
-		log.Fatal("TELEGRAM_BOT_TOKEN env should be defined.")
+		return nil, fmt.Errorf("%s env should be defined", envVar)
 	}
 	bot, err := telegram.NewBotAPI(token)
 
 	if err != nil {
-		log.Panic(err)
+		return nil, fmt.Errorf("Setup %v failed with: %v", envVar, err)
 	}
 
 	bot.Debug = true
 
 	log.Printf("Authorized on account @%s", bot.Self.UserName)
 
-	return bot
+	return bot, nil
+}
+
+func setupHiddenBot(bot *telegram.BotAPI) *telegram.BotAPI {
+	log.Println("Setup the hidden bot")
+	botHidden, err := setupBot("TELEGRAM_BOT_HIDDEN_TOKEN")
+	if err != nil {
+		log.Printf("Bot setup failed: %v. Fallback to main bot.", err)
+		botHidden = bot
+	}
+
+	return botHidden
+
+}
+
+func setupBots() (*telegram.BotAPI, *telegram.BotAPI, error) {
+	log.Println("Setup the main bot")
+	bot, err := setupBot("TELEGRAM_BOT_TOKEN")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return bot, setupHiddenBot(bot), nil
+}
+
+func leaveChat(bot TrollShieldBot, update *telegram.Update, trollGroup string) {
+	reply(bot, update, "Nesse grupo há trolls. Dou-me a liberdade de ir embora. Adeus.")
+	r, err := bot.LeaveChat(telegram.ChatConfig{ChatID: update.Message.Chat.ID})
+	if !r.Ok || err != nil {
+		log.Printf("Bot tried to exit from %v, but failed with: %v",
+			trollGroup, err,
+		)
+	}
 }
 
 func main() {
 	setupLogging()
-	bot := setupBot()
+	bot, botHidden, err := setupBots()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	for update := range getUpdates(bot) {
 		if messageEvent(&update) {
 			if update.Message.Text == "/lelerax" {
 				reply(bot, &update, "Estou vivo.")
 			}
+
+			// Exit automatically from group after the bot receive a message from it
+			for _, trollGroup := range trollGroups {
+				if fromChatEvent(&update, strings.TrimLeft(trollGroup, "@")) {
+					leaveChat(bot, &update, trollGroup)
+				}
+			}
 		}
 
 		if newChatMemberEvent(&update) {
 			for _, member := range *update.Message.NewChatMembers {
-				if trollHouse := findTrollHouses(bot, member.ID); trollHouse != "" {
+				if trollHouse := findTrollHouses(botHidden, member.ID); trollHouse != "" {
 					kickTroll(bot, &update, member, trollHouse)
 				} else if fromChatEvent(&update, "commonlispbr") && !member.IsBot {
 					welcomeMessage(bot, &update, member)
 				}
+
+				// Exit automatically from groups when I'm joining it
+				for _, trollGroup := range trollGroups {
+					if fromChatEvent(&update, strings.TrimLeft(trollGroup, "@")) && member.UserName == bot.Self.UserName {
+						leaveChat(bot, &update, trollGroup)
+					}
+				}
+
 			}
 		}
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"os"
 	"testing"
 
 	telegram "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -25,11 +26,30 @@ func (bot *BotMockup) GetChatMember(c telegram.ChatConfigWithUser) (telegram.Cha
 }
 
 func (bot *BotMockup) KickChatMember(c telegram.KickChatMemberConfig) (telegram.APIResponse, error) {
-	return telegram.APIResponse{Ok: true}, nil
+	switch c.ChatMemberConfig.UserID {
+	case 0:
+		return telegram.APIResponse{Ok: true}, nil
+	default:
+		return telegram.APIResponse{Ok: false}, errors.New("error")
+	}
+
 }
 
 func (bot *BotMockup) Send(c telegram.Chattable) (telegram.Message, error) {
 	return telegram.Message{}, nil
+}
+
+func (bot *BotMockup) LeaveChat(c telegram.ChatConfig) (telegram.APIResponse, error) {
+	switch c.ChatID {
+	case 1:
+		return telegram.APIResponse{Ok: true}, nil
+	default:
+		return telegram.APIResponse{Ok: false}, errors.New("user not found")
+	}
+}
+
+func (bot *BotMockup) GetUpdatesChan(c telegram.UpdateConfig) (telegram.UpdatesChannel, error) {
+	return make(chan telegram.Update, 1), nil
 }
 
 func TestGetUserName(t *testing.T) {
@@ -123,6 +143,8 @@ func TestKickTroll(t *testing.T) {
 	update.Message = &message
 	user := telegram.User{}
 	kickTroll(&botnilson, &update, user, "@trollhouse")
+	user.ID = 1
+	kickTroll(&botnilson, &update, user, "@trollhouse")
 }
 
 func TestWelcomeMessage(t *testing.T) {
@@ -134,4 +156,49 @@ func TestWelcomeMessage(t *testing.T) {
 	update.Message = &message
 	user := telegram.User{}
 	welcomeMessage(&botnilson, &update, user)
+}
+
+func TestSetupBot(t *testing.T) {
+	envVar := "TELEGRAM_BOT_TOKEN"
+	if err := os.Setenv(envVar, "123"); err != nil {
+		t.Errorf("Setup env var TELEGRAM_BOT_TOKEN error: %v", err)
+	}
+
+	if _, err := setupBot(envVar); err == nil {
+		t.Errorf("Invalid token should go fail, got nil error")
+	}
+
+	if _, err := setupBot("???"); err == nil {
+		t.Errorf("Non-defined env var should go fail, got nil error.")
+	}
+}
+
+func TestSetupBots(t *testing.T) {
+	bot, _, err := setupBots()
+	if err == nil {
+		t.Errorf("setupBots fail with invalid tokens.")
+	}
+	botHidden := setupHiddenBot(bot)
+	if botHidden != bot {
+		t.Errorf("When botHidden fails to start, use bot as fallback")
+	}
+}
+
+func TestSetupLogging(t *testing.T) {
+	setupLogging()
+}
+
+func TestLeaveChat(t *testing.T) {
+	bot := BotMockup{}
+	update := telegram.Update{}
+	message := telegram.Message{}
+	chat := telegram.Chat{}
+	message.Chat = &chat
+	update.Message = &message
+	leaveChat(&bot, &update, "trolleira")
+}
+
+func TestGetUpdates(t *testing.T) {
+	bot := BotMockup{}
+	getUpdates(&bot)
 }
