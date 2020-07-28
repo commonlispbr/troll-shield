@@ -174,8 +174,13 @@ func TestSetupBot(t *testing.T) {
 }
 
 func TestSetupBots(t *testing.T) {
-	if _, _, err := setupBots(); err == nil {
+	bot, _, err := setupBots()
+	if err == nil {
 		t.Errorf("setupBots fail with invalid tokens.")
+	}
+	botHidden := setupHiddenBot(bot)
+	if botHidden != bot {
+		t.Errorf("When botHidden fails to start, use bot as fallback")
 	}
 }
 

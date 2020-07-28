@@ -196,24 +196,26 @@ func setupBot(envVar string) (*telegram.BotAPI, error) {
 	return bot, nil
 }
 
-func setupBots() (*telegram.BotAPI, *telegram.BotAPI, error) {
-	var bot, botHidden *telegram.BotAPI
-	var err error
-
-	log.Println("Setup the main bot")
-	bot, err = setupBot("TELEGRAM_BOT_TOKEN")
-	if err != nil {
-		return nil, nil, err
-	}
-
+func setupHiddenBot(bot *telegram.BotAPI) *telegram.BotAPI {
 	log.Println("Setup the hidden bot")
-	botHidden, err = setupBot("TELEGRAM_BOT_HIDDEN_TOKEN")
+	botHidden, err := setupBot("TELEGRAM_BOT_HIDDEN_TOKEN")
 	if err != nil {
 		log.Printf("Bot setup failed: %v. Fallback to main bot.", err)
 		botHidden = bot
 	}
 
-	return bot, botHidden, nil
+	return botHidden
+
+}
+
+func setupBots() (*telegram.BotAPI, *telegram.BotAPI, error) {
+	log.Println("Setup the main bot")
+	bot, err := setupBot("TELEGRAM_BOT_TOKEN")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return bot, setupHiddenBot(bot), nil
 }
 
 func leaveChat(bot TrollShieldBot, update *telegram.Update, trollGroup string) {
