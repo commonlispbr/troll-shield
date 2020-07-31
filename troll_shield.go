@@ -34,6 +34,7 @@ var trollGroups = []string{
 	"@progclucb",
 	"@progclube",
 	"@commonlispbrofficial",
+	"@mlbrasil",
 }
 
 const logfile = "troll-shield.log"
