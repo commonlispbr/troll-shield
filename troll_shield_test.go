@@ -142,9 +142,13 @@ func TestKickTroll(t *testing.T) {
 	message.Chat = &chat
 	update.Message = &message
 	user := telegram.User{}
-	kickTroll(&botnilson, &update, user, "@trollhouse")
+	if err := kickTroll(&botnilson, &update, user, "@trollhouse"); err != nil {
+		t.Errorf("kickTroll error: %v", err)
+	}
 	user.ID = 1
-	kickTroll(&botnilson, &update, user, "@trollhouse")
+	if err := kickTroll(&botnilson, &update, user, "@trollhouse"); err == nil {
+		t.Errorf("kickTroll should fail, but got: %v", err)
+	}
 }
 
 func TestWelcomeMessage(t *testing.T) {
