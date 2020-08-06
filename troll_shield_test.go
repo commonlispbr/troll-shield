@@ -213,6 +213,14 @@ func TestSaveLoadKills(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	content := []byte("isso-nao-eh-um-numero")
+	if _, err := tmpfile.Write(content); err != nil {
+		t.Fatal(err)
+	}
+
+	if kills := loadKills(tmpfile.Name()); kills != 0 {
+		t.Errorf("loadKills should return 0 when there is a invalid number, got: %v", kills)
+	}
 
 	// write 10
 	if err := saveKills(tmpfile.Name(), 10); err != nil {
@@ -220,9 +228,7 @@ func TestSaveLoadKills(t *testing.T) {
 	}
 
 	// read 10
-	kills := loadKills(tmpfile.Name())
-
-	if kills != 10 {
+	if kills := loadKills(tmpfile.Name()); kills != 10 {
 		t.Errorf("Save/Load of KillCounter didn't worked, expected 10, got %v", kills)
 	}
 
@@ -243,6 +249,6 @@ func TestReportKills(t *testing.T) {
 	chat := telegram.Chat{}
 	message.Chat = &chat
 	update.Message = &message
-	kills := int64(10)
-	reportKills(&bot, &update, kills)
+	reportKills(&bot, &update, int64(11))
+	reportKills(&bot, &update, int64(10))
 }

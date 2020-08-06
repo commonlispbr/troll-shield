@@ -240,15 +240,16 @@ func loadKills(fpath string) int64 {
 		i, err := strconv.Atoi(strings.TrimSpace(string(dat)))
 		if err != nil {
 			log.Printf("Parsing %q go bad, got error: %v", fpath, err)
+		} else {
+			return int64(i)
 		}
-		return int64(i)
 	}
 
 	return 0
 }
 
 func saveKills(fpath string, kills int64) error {
-	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_WRONLY, 0666)
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err == nil {
 		_, err = f.WriteString(strconv.FormatInt(kills, 10))
 	}
@@ -260,6 +261,9 @@ func saveKills(fpath string, kills int64) error {
 
 func reportKills(bot TrollShieldBot, update *telegram.Update, kills int64) {
 	txt := fmt.Sprintf("%v foram sacrificados.", kills)
+	if kills%2 == 0 {
+		txt = fmt.Sprintf("Já taquei o pau em %v trolls!", kills)
+	}
 	reply(bot, update, txt)
 }
 
