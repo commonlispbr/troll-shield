@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -205,4 +206,43 @@ func TestLeaveChat(t *testing.T) {
 func TestGetUpdates(t *testing.T) {
 	bot := BotMockup{}
 	getUpdates(&bot)
+}
+
+func TestSaveLoadKills(t *testing.T) {
+	tmpfile, err := ioutil.TempFile("", "kills.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// write 10
+	if err := saveKills(tmpfile.Name(), 10); err != nil {
+		t.Errorf("saveKills failed: %v", err)
+	}
+
+	// read 10
+	kills := loadKills(tmpfile.Name())
+
+	if kills != 10 {
+		t.Errorf("Save/Load of KillCounter didn't worked, expected 10, got %v", kills)
+	}
+
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Remove(tmpfile.Name()); err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+func TestReportKills(t *testing.T) {
+	bot := BotMockup{}
+	update := telegram.Update{}
+	message := telegram.Message{}
+	chat := telegram.Chat{}
+	message.Chat = &chat
+	update.Message = &message
+	kills := int64(10)
+	reportKills(&bot, &update, kills)
 }
