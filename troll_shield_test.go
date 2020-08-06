@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -142,9 +143,13 @@ func TestKickTroll(t *testing.T) {
 	message.Chat = &chat
 	update.Message = &message
 	user := telegram.User{}
-	kickTroll(&botnilson, &update, user, "@trollhouse")
+	if err := kickTroll(&botnilson, &update, user, "@trollhouse"); err != nil {
+		t.Errorf("kickTroll error: %v", err)
+	}
 	user.ID = 1
-	kickTroll(&botnilson, &update, user, "@trollhouse")
+	if err := kickTroll(&botnilson, &update, user, "@trollhouse"); err == nil {
+		t.Errorf("kickTroll should fail, but got: %v", err)
+	}
 }
 
 func TestWelcomeMessage(t *testing.T) {
@@ -201,4 +206,49 @@ func TestLeaveChat(t *testing.T) {
 func TestGetUpdates(t *testing.T) {
 	bot := BotMockup{}
 	getUpdates(&bot)
+}
+
+func TestSaveLoadKills(t *testing.T) {
+	tmpfile, err := ioutil.TempFile("", "kills.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := []byte("isso-nao-eh-um-numero")
+	if _, err := tmpfile.Write(content); err != nil {
+		t.Fatal(err)
+	}
+
+	if kills := loadKills(tmpfile.Name()); kills != 0 {
+		t.Errorf("loadKills should return 0 when there is a invalid number, got: %v", kills)
+	}
+
+	// write 10
+	if err := saveKills(tmpfile.Name(), 10); err != nil {
+		t.Errorf("saveKills failed: %v", err)
+	}
+
+	// read 10
+	if kills := loadKills(tmpfile.Name()); kills != 10 {
+		t.Errorf("Save/Load of KillCounter didn't worked, expected 10, got %v", kills)
+	}
+
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Remove(tmpfile.Name()); err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+func TestReportKills(t *testing.T) {
+	bot := BotMockup{}
+	update := telegram.Update{}
+	message := telegram.Message{}
+	chat := telegram.Chat{}
+	message.Chat = &chat
+	update.Message = &message
+	reportKills(&bot, &update, int64(11))
+	reportKills(&bot, &update, int64(10))
 }

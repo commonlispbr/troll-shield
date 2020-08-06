@@ -7,8 +7,10 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	logger "log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -38,6 +40,7 @@ var trollGroups = []string{
 }
 
 const logfile = "troll-shield.log"
+const killsFile = "kills.txt"
 
 var log = logger.New(os.Stderr, "", logger.LstdFlags)
 
@@ -139,7 +142,7 @@ func findTrollHouses(bot TrollShieldBot, userID int) string {
 }
 
 // kickTroll ban the troll and send a message about where we can found the trolls
-func kickTroll(bot TrollShieldBot, update *telegram.Update, user telegram.User, trollHouse string) {
+func kickTroll(bot TrollShieldBot, update *telegram.Update, user telegram.User, trollHouse string) error {
 	chatMember := telegram.ChatMemberConfig{
 		ChatID: update.Message.Chat.ID,
 		UserID: user.ID,
@@ -161,6 +164,8 @@ func kickTroll(bot TrollShieldBot, update *telegram.Update, user telegram.User, 
 		)
 		reply(bot, update, text)
 	}
+
+	return err
 }
 
 func setupLogging() {
@@ -229,43 +234,35 @@ func leaveChat(bot TrollShieldBot, update *telegram.Update, trollGroup string) {
 	}
 }
 
-func main() {
-	setupLogging()
-	bot, botHidden, err := setupBots()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	for update := range getUpdates(bot) {
-		if messageEvent(&update) {
-			if update.Message.Text == "/lelerax" {
-				reply(bot, &update, "Estou vivo.")
-			}
-
-			// Exit automatically from group after the bot receive a message from it
-			for _, trollGroup := range trollGroups {
-				if fromChatEvent(&update, strings.TrimLeft(trollGroup, "@")) {
-					leaveChat(bot, &update, trollGroup)
-				}
-			}
-		}
-
-		if newChatMemberEvent(&update) {
-			for _, member := range *update.Message.NewChatMembers {
-				if trollHouse := findTrollHouses(botHidden, member.ID); trollHouse != "" {
-					kickTroll(bot, &update, member, trollHouse)
-				} else if fromChatEvent(&update, "commonlispbr") && !member.IsBot {
-					welcomeMessage(bot, &update, member)
-				}
-
-				// Exit automatically from groups when I'm joining it
-				for _, trollGroup := range trollGroups {
-					if fromChatEvent(&update, strings.TrimLeft(trollGroup, "@")) && member.UserName == bot.Self.UserName {
-						leaveChat(bot, &update, trollGroup)
-					}
-				}
-
-			}
+func loadKills(fpath string) int64 {
+	dat, err := ioutil.ReadFile(fpath)
+	if err == nil {
+		i, err := strconv.Atoi(strings.TrimSpace(string(dat)))
+		if err != nil {
+			log.Printf("Parsing %q go bad, got error: %v", fpath, err)
+		} else {
+			return int64(i)
 		}
 	}
+
+	return 0
+}
+
+func saveKills(fpath string, kills int64) error {
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	if err == nil {
+		_, err = f.WriteString(strconv.FormatInt(kills, 10))
+	}
+	if e := f.Close(); e != nil {
+		err = e
+	}
+	return err
+}
+
+func reportKills(bot TrollShieldBot, update *telegram.Update, kills int64) {
+	txt := fmt.Sprintf("%v foram sacrificados.", kills)
+	if kills%2 == 0 {
+		txt = fmt.Sprintf("Já taquei o pau em %v trolls!", kills)
+	}
+	reply(bot, update, txt)
 }
