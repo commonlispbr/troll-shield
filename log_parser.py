@@ -42,4 +42,4 @@ def parse(fpath: str):
 if __name__ == '__main__':
     fname = sys.argv[1]
     logs = parse(fname)
-    json.dump(logs, open("parsed_" + fname + ".json", "w"))
+    json.dump(logs, open(fname + ".json", "w"))
