@@ -18,3 +18,5 @@
 
 *.log
 /kills.txt
+*.mypy_cache
+*.coverage
