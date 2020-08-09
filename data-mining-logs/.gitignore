@@ -1,0 +1,5 @@
+docs/
+token.txt
+logs/
+.venv
+.mypy_cache
