@@ -1,7 +1,6 @@
 // Copyright 2020 the commonlispbr authors. All rights reserved
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
 package main
 
 import (
@@ -200,7 +199,7 @@ func setupBot(envVar string) (*telegram.BotAPI, error) {
 	bot, err := telegram.NewBotAPI(token)
 
 	if err != nil {
-		return nil, fmt.Errorf("Setup %v failed with: %v", envVar, err)
+		return nil, fmt.Errorf("setup %v failed with: %v", envVar, err)
 	}
 
 	bot.Debug = true
@@ -281,7 +280,8 @@ func reportKills(bot TrollShieldBot, update *telegram.Update, kills int64) {
 // and return what is available
 func extractPassUserName(command string) string {
 	tokens := strings.Split(command, " ")
-	return strings.Join(tokens[1:len(tokens)], " ")
+	n := len(tokens)
+	return strings.Join(tokens[1:n], " ")
 }
 
 // If has pass, return true and and return the matched pass
