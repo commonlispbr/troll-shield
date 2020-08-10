@@ -28,6 +28,10 @@ func main() {
 				reportKills(bot, &update, kills)
 			}
 
+			if strings.HasPrefix(update.Message.Text, "/pass ") && fromAdminEvent(&update) {
+				addPassList(bot, &update)
+			}
+
 			// Exit automatically from group after the bot receive a message from it
 			for _, trollGroup := range trollGroups {
 				if fromChatEvent(&update, strings.TrimLeft(trollGroup, "@")) {
@@ -38,6 +42,12 @@ func main() {
 
 		if newChatMemberEvent(&update) {
 			for _, member := range *update.Message.NewChatMembers {
+				if pass, ok := hasPass(member); ok {
+					removePassList(bot, &update, pass)
+					welcomeMessage(bot, &update, member)
+					continue
+				}
+
 				if trollHouse := findTrollHouses(botHidden, member.ID); trollHouse != "" {
 					err := kickTroll(bot, &update, member, trollHouse)
 					if err == nil {

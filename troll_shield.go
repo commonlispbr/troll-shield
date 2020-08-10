@@ -1,7 +1,6 @@
 // Copyright 2020 the commonlispbr authors. All rights reserved
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
 package main
 
 import (
@@ -37,6 +36,14 @@ var trollGroups = []string{
 	"@progclube",
 	"@commonlispbrofficial",
 	"@mlbrasil",
+}
+
+var passList = []string{}
+
+var admins = []string{
+	"lerax",
+	"luksamuk",
+	"perkunos",
 }
 
 const logfile = "troll-shield.log"
@@ -192,7 +199,7 @@ func setupBot(envVar string) (*telegram.BotAPI, error) {
 	bot, err := telegram.NewBotAPI(token)
 
 	if err != nil {
-		return nil, fmt.Errorf("Setup %v failed with: %v", envVar, err)
+		return nil, fmt.Errorf("setup %v failed with: %v", envVar, err)
 	}
 
 	bot.Debug = true
@@ -265,4 +272,62 @@ func reportKills(bot TrollShieldBot, update *telegram.Update, kills int64) {
 		txt = fmt.Sprintf("Já taquei o pau em %v trolls!", kills)
 	}
 	reply(bot, update, txt)
+}
+
+// parse:
+// - /pass <@username>
+// - /pass <FirstName [LastName]>
+// and return what is available
+func extractPassUserName(command string) string {
+	tokens := strings.Split(command, " ")
+	n := len(tokens)
+	return strings.Join(tokens[1:n], " ")
+}
+
+// If has pass, return true and and return the matched pass
+func hasPass(user telegram.User) (string, bool) {
+	userName := getUserName(user)
+	for _, pass := range passList {
+		if strings.HasPrefix(userName, pass) || user.FirstName == pass {
+			return pass, true
+		}
+	}
+	return "", false
+}
+
+// remove pass list and reply the consumed pass list
+func removePassList(bot TrollShieldBot, update *telegram.Update, pass string) {
+	// Remove the element at index i from a.
+	n := len(passList)
+	for i, p := range passList {
+		if p == pass {
+			// remove pass from passList
+			passList[i] = passList[n-1] // Copy last element to index i.
+			passList[n-1] = ""          // Erase last element (write zero value).
+			passList = passList[:n-1]   // Truncate slice.
+		}
+	}
+	reply(bot, update, fmt.Sprintf("O passe para %q foi consumido.", pass))
+}
+
+// check if a message cames from a @commonlispbr admin
+func fromAdminEvent(update *telegram.Update) bool {
+	if update.Message.From == nil {
+		return false
+	}
+	fromUserName := update.Message.From.UserName
+	for _, admin := range admins {
+		if admin == fromUserName {
+			return true
+		}
+	}
+
+	return false
+}
+
+// addPass to passList and send a message
+func addPassList(bot TrollShieldBot, update *telegram.Update) {
+	userName := extractPassUserName(update.Message.Text)
+	passList = append(passList, userName)
+	reply(bot, update, fmt.Sprintf("O passe para %q foi adicionado.", userName))
 }
