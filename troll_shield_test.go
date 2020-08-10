@@ -36,6 +36,16 @@ func (bot *BotMockup) KickChatMember(c telegram.KickChatMemberConfig) (telegram.
 
 }
 
+func (bot *BotMockup) UnbanChatMember(c telegram.ChatMemberConfig) (telegram.APIResponse, error) {
+	switch c.UserID {
+	case 0:
+		return telegram.APIResponse{Ok: true}, nil
+	default:
+		return telegram.APIResponse{Ok: false}, errors.New("error")
+	}
+
+}
+
 func (bot *BotMockup) Send(c telegram.Chattable) (telegram.Message, error) {
 	return telegram.Message{}, nil
 }
