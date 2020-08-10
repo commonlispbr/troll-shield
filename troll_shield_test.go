@@ -252,3 +252,68 @@ func TestReportKills(t *testing.T) {
 	reportKills(&bot, &update, int64(11))
 	reportKills(&bot, &update, int64(10))
 }
+
+func TestExtractPassUserName(t *testing.T) {
+	tableTest := []struct {
+		input    string
+		expected string
+	}{
+		{
+			"/pass @lerax",
+			"@lerax",
+		},
+		{
+			"/pass First Name",
+			"First Name",
+		},
+	}
+
+	for _, test := range tableTest {
+		if got := extractPassUserName(test.input); got != test.expected {
+			t.Errorf("Expected %q, got %q", test.expected, got)
+		}
+
+	}
+}
+
+func TestPassList(t *testing.T) {
+
+	bot := BotMockup{}
+	update := telegram.Update{}
+	message := telegram.Message{}
+	chat := telegram.Chat{}
+	message.Chat = &chat
+	message.Text = "/pass @lerax"
+	update.Message = &message
+	user := telegram.User{UserName: "lerax"}
+
+	// adding test
+	addPassList(&bot, &update)
+	t.Logf("passList: %v", passList)
+	if pass, ok := hasPass(user); pass != "@lerax" && ok != true {
+		t.Errorf("User @lerax should have a pass: pass=%v, ok=%v", pass, ok)
+	}
+
+	// removing test
+	t.Logf("passList: %v", passList)
+	removePassList(&bot, &update, "@lerax")
+	if pass, ok := hasPass(user); ok != false {
+		t.Errorf("User @lerax should not have more a pass: pass=%v, ok=%v", pass, ok)
+	}
+}
+
+func TestFromAdminEvent(t *testing.T) {
+	update := telegram.Update{}
+	message := telegram.Message{}
+	user := telegram.User{UserName: "lerax"}
+	message.From = &user
+	update.Message = &message
+	if got := fromAdminEvent(&update); got == false {
+		t.Errorf("lerax is a eternal admin, it should be true")
+	}
+
+	user.UserName = "delduca"
+	if got := fromAdminEvent(&update); got == true {
+		t.Errorf("delduca should not even being a member, neither admin.")
+	}
+}
