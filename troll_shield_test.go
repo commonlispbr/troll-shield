@@ -309,7 +309,7 @@ func TestFromAdminEvent(t *testing.T) {
 	message.From = &user
 	update.Message = &message
 	if got := fromAdminEvent(&update); got == false {
-		t.Errorf("lerax is a eternal admin, it should be true")
+		t.Errorf("lerax is an eternal admin, it should be true")
 	}
 
 	user.UserName = "delduca"
