@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	telegram "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -156,13 +157,12 @@ func kickTroll(bot TrollShieldBot, update *telegram.Update, user telegram.User, 
 		UserID: user.ID,
 	}
 	resp, err := bot.KickChatMember(
-		telegram.KickChatMemberConfig{ChatMemberConfig: chatMember},
+		telegram.KickChatMemberConfig{
+			ChatMemberConfig: chatMember,
+			UntilDate:        time.Now().AddDate(0, 0, 1).Unix(), // one day
+			//UntilDate: time.Now().Add(time.Minute * 1).Unix(), // one minute
+		},
 	)
-
-	if err == nil {
-		// only kick, don't ban
-		_, err = bot.UnbanChatMember(chatMember)
-	}
 
 	if !resp.Ok || err != nil {
 		log.Printf(
