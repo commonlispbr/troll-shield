@@ -20,6 +20,7 @@ import (
 type TrollShieldBot interface {
 	GetChatMember(telegram.ChatConfigWithUser) (telegram.ChatMember, error)
 	KickChatMember(telegram.KickChatMemberConfig) (telegram.APIResponse, error)
+	UnbanChatMember(telegram.ChatMemberConfig) (telegram.APIResponse, error)
 	Send(telegram.Chattable) (telegram.Message, error)
 	LeaveChat(telegram.ChatConfig) (telegram.APIResponse, error)
 	GetUpdatesChan(telegram.UpdateConfig) (telegram.UpdatesChannel, error)
@@ -158,6 +159,11 @@ func kickTroll(bot TrollShieldBot, update *telegram.Update, user telegram.User, 
 		telegram.KickChatMemberConfig{ChatMemberConfig: chatMember},
 	)
 
+	if err == nil {
+		// only kick, don't ban
+		_, err = bot.UnbanChatMember(chatMember)
+	}
+
 	if !resp.Ok || err != nil {
 		log.Printf(
 			"[!] Kicking %q did not work, error code %v: %v",
@@ -166,7 +172,7 @@ func kickTroll(bot TrollShieldBot, update *telegram.Update, user telegram.User, 
 	} else {
 		username := getUserName(user)
 		text := fmt.Sprintf(
-			"%v foi banido porque é membro do grupo: %v. Adeus.",
+			"%v foi removido porque é membro do grupo: %v. Para mais informações, acione o nosso SAC 24h: @skhaz.",
 			username, trollHouse,
 		)
 		reply(bot, update, text)
