@@ -5,6 +5,7 @@ from pprint import pprint
 
 bot = Bot(open("token.txt").read().strip())
 
+
 def get_chat_debug():
     users = {
         "lerax": 336558555,
@@ -29,12 +30,12 @@ def set_bot_commands():
             "description": "Retorna a quantidade de trolls decapitados."
         },
         {
-            "command": "lelerax",
-            "description": "Ping. Verifica se estou vivo."
+            "command": "ping",
+            "description": "Verifica se estou vivo. Se eu não responder já sabe."
         },
         {
             "command": "pass",
-            "description": "Commando de passe /pass <@username>. Só funciona com os admins do @commonlispbr."
+            "description": "Commando de passe /pass <@username>. Exclusivo para admins do @commonlispbr."
         }
     ]
 
