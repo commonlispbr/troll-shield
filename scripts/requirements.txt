@@ -1,0 +1,1 @@
+telepot @ git+https://github.com/ryukinix/telepot.git#egg=telepot

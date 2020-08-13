@@ -20,3 +20,4 @@
 /kills.txt
 *.mypy_cache
 *.coverage
+/run.sh
