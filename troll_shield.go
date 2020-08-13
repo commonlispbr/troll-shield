@@ -45,6 +45,7 @@ var admins = []string{
 	"lerax",
 	"luksamuk",
 	"perkunos",
+	"renan_r",
 }
 
 const logfile = "troll-shield.log"
@@ -334,6 +335,22 @@ func fromAdminEvent(update *telegram.Update) bool {
 // addPass to passList and send a message
 func addPassList(bot TrollShieldBot, update *telegram.Update) {
 	userName := extractPassUserName(update.Message.Text)
-	passList = append(passList, userName)
-	reply(bot, update, fmt.Sprintf("O passe para %q foi adicionado.", userName))
+	if len(userName) > 0 {
+		passList = append(passList, userName)
+		reply(bot, update, fmt.Sprintf("O passe para %q foi adicionado.", userName))
+	}
+}
+
+func commandEvent(update *telegram.Update) bool {
+	return messageEvent(update) && strings.HasPrefix(update.Message.Text, "/")
+}
+
+// check if a /command is valid
+func checkCommand(botUserName string, msg string, command string) bool {
+	isQualified := strings.Contains(msg, command+"@")
+	if isQualified {
+		qualifiedCommand := fmt.Sprintf("%v@%v", command, botUserName)
+		return strings.HasPrefix(msg, qualifiedCommand)
+	}
+	return strings.HasPrefix(msg, command)
 }

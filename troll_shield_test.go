@@ -111,6 +111,7 @@ func TestEvents(t *testing.T) {
 		t.Errorf("newChatMemberEvent should return true when there is new members, got: %v", got)
 	}
 
+	// fromChatEvent
 	if got := fromChatEvent(&update, "commonlispbr"); got != false {
 		t.Errorf("fromChatEvent should return false when there is no new members, got: %v", got)
 	}
@@ -121,6 +122,16 @@ func TestEvents(t *testing.T) {
 	}
 	if got := fromChatEvent(&update, "CommonLispBR HQ"); got != true {
 		t.Errorf("fromChatEvent should return true when there is new members, got: %v", got)
+	}
+
+	// commandEvent
+	update.Message.Text = "pancadaria tiro e bomba"
+	if got := commandEvent(&update); got != false {
+		t.Errorf("commandEvent should return false when there is no prefix / on Message.Text, got: %v", got)
+	}
+	update.Message.Text = "/command"
+	if got := commandEvent(&update); got != true {
+		t.Errorf("commandEvent should return true when receives /command like message, got: %v", got)
 	}
 
 }
@@ -276,13 +287,20 @@ func TestExtractPassUserName(t *testing.T) {
 			"/pass First Name",
 			"First Name",
 		},
+		{
+			"/pass@lelerax_bot @tretanews_bot",
+			"@tretanews_bot",
+		},
+		{
+			"/pass",
+			"",
+		},
 	}
 
 	for _, test := range tableTest {
 		if got := extractPassUserName(test.input); got != test.expected {
 			t.Errorf("Expected %q, got %q", test.expected, got)
 		}
-
 	}
 }
 
@@ -326,4 +344,45 @@ func TestFromAdminEvent(t *testing.T) {
 	if got := fromAdminEvent(&update); got == true {
 		t.Errorf("delduca should not even being a member, neither admin.")
 	}
+}
+
+func TestCheckCommand(t *testing.T) {
+	tableTest := []struct {
+		botUserName string
+		msg         string
+		command     string
+		expected    bool
+	}{
+		{
+			"lelerax_bot",
+			"/kills@lelerax_bot",
+			"/kills",
+			true,
+		},
+		{
+			"botnilson",
+			"/pass @infeliz",
+			"/pass",
+			true,
+		},
+		{
+			"botsvaldo",
+			"/pass@lelerax_bot @username",
+			"/pass",
+			false,
+		},
+		{
+			"botsvaldo",
+			"/pass@botsvaldo @username",
+			"/pass",
+			true,
+		},
+	}
+
+	for i, test := range tableTest {
+		if got := checkCommand(test.botUserName, test.msg, test.command); got != test.expected {
+			t.Errorf("%d. Expected %v, got %v for %+v.", i+1, test.expected, got, test)
+		}
+	}
+
 }
