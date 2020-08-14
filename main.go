@@ -12,31 +12,34 @@ import (
 func main() {
 	setupLogging()
 	bot, botHidden, err := setupBots()
+	botUser := bot.Self.UserName
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	kills := loadKills(killsFile)
 	log.Printf("Currently kill state: %v", kills)
-
 	for update := range getUpdates(bot) {
 		if messageEvent(&update) {
-			if update.Message.Text == "/lelerax" {
-				reply(bot, &update, "Estou vivo.")
-			}
-
-			if update.Message.Text == "/kills" {
-				reportKills(bot, &update, kills)
-			}
-
-			if strings.HasPrefix(update.Message.Text, "/pass ") && fromAdminEvent(&update) {
-				addPassList(bot, &update)
-			}
-
 			// Exit automatically from group after the bot receive a message from it
 			for _, trollGroup := range trollGroups {
 				if fromChatEvent(&update, strings.TrimLeft(trollGroup, "@")) {
 					leaveChat(bot, &update, trollGroup)
 				}
+			}
+		}
+
+		if commandEvent(&update) {
+			msg := update.Message.Text
+			if checkCommand(botUser, msg, "/ping") {
+				reply(bot, &update, "Estou vivo.")
+			}
+
+			if checkCommand(botUser, msg, "/kills") {
+				reportKills(bot, &update, kills)
+			}
+
+			if checkCommand(botUser, msg, "/pass") && fromAdminEvent(&update) {
+				addPassList(bot, &update)
 			}
 		}
 
