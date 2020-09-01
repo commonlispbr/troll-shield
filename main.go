@@ -59,8 +59,6 @@ func main() {
 							log.Printf("saving kills failed: %v", err)
 						}
 					}
-				} else if fromChatEvent(&update, "commonlispbr") && !member.IsBot {
-					welcomeMessage(bot, &update, member)
 				}
 
 				// Exit automatically from groups when I'm joining it
