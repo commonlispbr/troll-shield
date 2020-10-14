@@ -34,7 +34,6 @@ var trollGroups = []string{
 	"@javascriptbr",
 	"@frontendbr",
 	"@WebDevBR",
-	"@progclucb",
 	"@progclube",
 	"@commonlispbrofficial",
 	"@mlbrasil",
