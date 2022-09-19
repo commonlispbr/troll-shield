@@ -31,7 +31,6 @@ type TrollShieldBot interface {
 var trollGroups = []string{
 	"@ccppbrasil",
 	"@vaicaraiooo",
-	"@javascriptbr",
 	"@frontendbr",
 	"@WebDevBR",
 	"@progclube",
