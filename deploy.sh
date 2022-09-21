@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eux
 server=lisp@bikelis
-go build
+CGO_ENABLED=0 go build  -a -ldflags '-extldflags "-static"' .
 ssh $server 'pkill troll-shield || true'
 scp troll-shield $server:
 git describe --tags | ssh $server 'cat > version.txt'
